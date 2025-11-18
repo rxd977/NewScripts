@@ -1,18 +1,22 @@
 --[[
-    2D A* Pathfinding Module
+    3D A* Pathfinding Module
     
-    A clean, efficient pathfinding module that works in 2D space using A* algorithm.
-    Perfect for maze navigation, NPC movement, and player guidance.
+    A clean, efficient pathfinding module that works in 3D space using A* algorithm.
+    Perfect for FPS games, NPC movement, and player guidance with full vertical navigation.
     
     Usage:
         local Pathfinder = require(path.to.module)
         local pathfinder = Pathfinder.new()
         
         local path = pathfinder:FindPath(startPos, endPos, {
-            resolution = 5,      -- Grid size (smaller = more accurate but slower)
-            testSize = 4,        -- Collision detection size
+            resolution = 5,        -- Grid size (smaller = more accurate but slower)
+            testSize = 4,          -- Collision detection size
             maxIterations = 10000,
-            filtered = {...},    -- Instances to ignore during collision detection
+            allowVertical = true,  -- Allow vertical movement (climbing/falling)
+            maxClimbHeight = 10,   -- Maximum height character can climb
+            maxFallHeight = 30,    -- Maximum height character can fall
+            filtered = {...},      -- Instances to ignore during collision detection
+            cullPath = true,       -- Remove unnecessary waypoints
         })
         
         if path then
@@ -28,25 +32,32 @@ Pathfinder.__index = Pathfinder
 -- Constants
 local DEFAULT_RESOLUTION = 5
 local DEFAULT_MAX_ITERATIONS = 10000
+local DEFAULT_MAX_CLIMB = 10
+local DEFAULT_MAX_FALL = 30
 
--- Only horizontal directions (prevents flying over walls)
-local DIRECTIONS = {
-    Vector3.xAxis,      -- Right
-    -Vector3.xAxis,     -- Left
-    Vector3.zAxis,      -- Forward
-    -Vector3.zAxis,     -- Back
+-- 3D Directions: horizontal + vertical
+local HORIZONTAL_DIRECTIONS = {
+    Vector3.new(1, 0, 0),   -- Right
+    Vector3.new(-1, 0, 0),  -- Left
+    Vector3.new(0, 0, 1),   -- Forward
+    Vector3.new(0, 0, -1),  -- Back
+}
+
+local VERTICAL_DIRECTIONS = {
+    Vector3.new(0, 1, 0),   -- Up
+    Vector3.new(0, -1, 0),  -- Down
 }
 
 -- Cache for terrain voxels (optional optimization)
 local discoveredTerrainVoxels = {}
 
 --[[
-    Snaps position to grid while maintaining Y coordinate
+    Snaps position to grid in all 3 dimensions
 ]]
 local function GridVector(pos, resolution)
     return Vector3.new(
         math.round(pos.X/resolution)*resolution, 
-        pos.Y,
+        math.round(pos.Y/resolution)*resolution,
         math.round(pos.Z/resolution)*resolution
     )
 end
@@ -186,7 +197,7 @@ function Pathfinder.new()
 end
 
 --[[
-    Finds a path from start to goal using A* algorithm
+    Finds a path from start to goal using A* algorithm in 3D space
     
     Parameters:
         start (Vector3): Starting position
@@ -195,6 +206,9 @@ end
             - resolution (number): Grid size, default 5
             - testSize (number): Collision test size, default = resolution
             - maxIterations (number): Max pathfinding iterations, default 10000
+            - allowVertical (boolean): Enable vertical movement, default true
+            - maxClimbHeight (number): Max height to climb, default 10
+            - maxFallHeight (number): Max height to fall, default 30
             - filtered (table): Array of instances to ignore
             - useStaticTerrain (boolean): Cache terrain checks, default false
             - waterMode (string): "ignore", "only", or "excluding", default "ignore"
@@ -213,6 +227,9 @@ function Pathfinder:FindPath(start, goal, options)
     local testSize = math.max(options.testSize or resolution, 0.1)
     local maxIterations = options.maxIterations or DEFAULT_MAX_ITERATIONS
     local shouldCullPath = options.cullPath ~= false
+    local allowVertical = options.allowVertical ~= false
+    local maxClimbHeight = options.maxClimbHeight or DEFAULT_MAX_CLIMB
+    local maxFallHeight = options.maxFallHeight or DEFAULT_MAX_FALL
     
     local rayParams = RaycastParams.new()
     local overParams = OverlapParams.new()
@@ -238,6 +255,18 @@ function Pathfinder:FindPath(start, goal, options)
         return nil 
     end
     
+    -- Build direction table based on settings
+    local directions = {}
+    for _, dir in ipairs(HORIZONTAL_DIRECTIONS) do
+        table.insert(directions, dir)
+    end
+    
+    if allowVertical then
+        for _, dir in ipairs(VERTICAL_DIRECTIONS) do
+            table.insert(directions, dir)
+        end
+    end
+    
     -- A* Algorithm
     local open = {}
     local closed = {}
@@ -260,9 +289,24 @@ function Pathfinder:FindPath(start, goal, options)
         closed[S] = Sdata
         
         -- Check all neighbors
-        for _, i in pairs(DIRECTIONS) do
+        for _, i in pairs(directions) do
             local dir = i * resolution
             local tile = S + dir
+            
+            -- Check vertical movement constraints
+            if allowVertical then
+                local heightDiff = tile.Y - S.Y
+                
+                -- Block if climbing too high
+                if heightDiff > 0 and heightDiff > maxClimbHeight then
+                    continue
+                end
+                
+                -- Block if falling too far
+                if heightDiff < 0 and math.abs(heightDiff) > maxFallHeight then
+                    continue
+                end
+            end
             
             -- Check if reached goal
             local distToGoal = (tile - goal).Magnitude
@@ -296,9 +340,15 @@ function Pathfinder:FindPath(start, goal, options)
                     continue 
                 end
                 
+                -- Calculate movement cost (higher cost for vertical movement)
+                local moveCost = resolution
+                if math.abs(dir.Y) > 0 then
+                    moveCost = moveCost * 1.5 -- Vertical movement costs more
+                end
+                
                 -- Add to open set
                 open[tile] = {
-                    G = Sdata.G + resolution,
+                    G = Sdata.G + moveCost,
                     H = (tile - goal).Magnitude,
                     P = S
                 }
@@ -306,11 +356,16 @@ function Pathfinder:FindPath(start, goal, options)
             end
             
             -- Update if better path found
-            local sDist = Sdata.G + resolution
+            local moveCost = resolution
+            if math.abs(dir.Y) > 0 then
+                moveCost = moveCost * 1.5
+            end
+            
+            local sDist = Sdata.G + moveCost
             local prevDist = open[tile].G
             if sDist < prevDist then
                 open[tile] = {
-                    G = Sdata.G + resolution,
+                    G = Sdata.G + moveCost,
                     H = (tile - goal).Magnitude,
                     P = S
                 }
