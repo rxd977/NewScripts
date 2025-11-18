@@ -90,17 +90,35 @@ local function checkCollision(pos, size, params, waterMode, useStaticTerrain)
         end
     end
     
-    -- Check for parts in the area
+    -- Check for parts in the area (with proper filtering)
     local parts = workspace:GetPartBoundsInBox(CFrame.new(pos), Vector3.new(size, size, size), params)
     
-    if #parts > 0 then
+    -- Count only parts that aren't filtered and are solid obstacles
+    local hasObstacle = false
+    for _, part in ipairs(parts) do
+        -- Check if part can collide and is a real obstacle
+        if part.CanCollide then
+            hasObstacle = true
+            break
+        end
+    end
+    
+    if hasObstacle then
         return true
     end
     
     -- Check terrain
     if not terrainEmpty then
         local regionsize = Vector3.new(size, size, size)/2
-        local mat, occ = workspace.Terrain:ReadVoxels(Region3.new(pos - regionsize, pos + regionsize), 4)
+        local success, mat, occ = pcall(function()
+            return workspace.Terrain:ReadVoxels(Region3.new(pos - regionsize, pos + regionsize), 4)
+        end)
+        
+        if not success then
+            -- If terrain read fails, assume no collision
+            return false
+        end
+        
         local foundMaterials = {}
         local readsize = mat.Size
         
@@ -155,24 +173,23 @@ end
 --[[
     Removes unnecessary waypoints using line-of-sight optimization
 ]]
-local function cullPath(path, waterMode)
+local function cullPath(path, waterMode, rayParams)
     if #path <= 2 then return path end
     
     local newPath = {path[1]}
     local previous = path[1]
     local goal = path[#path]
-    local params = RaycastParams.new()
     
     for x, i in pairs(path) do
         if x <= 1 then continue end
         
-        local results = workspace:Raycast(previous, (i - previous).Unit * (i-previous).Magnitude, params)
+        local results = workspace:Raycast(previous, (i - previous).Unit * (i-previous).Magnitude, rayParams)
         local water = false
         
         if results and results.Material == Enum.Material.Water then
             water = true
-            params.IgnoreWater = true
-            results = workspace:Raycast(previous, (i - previous).Unit * (i-previous).Magnitude, params)
+            rayParams.IgnoreWater = true
+            results = workspace:Raycast(previous, (i - previous).Unit * (i-previous).Magnitude, rayParams)
         end
         
         if results or (waterMode == "only" and water == false) or (waterMode == "excluding" and water) then
@@ -213,6 +230,7 @@ end
             - useStaticTerrain (boolean): Cache terrain checks, default false
             - waterMode (string): "ignore", "only", or "excluding", default "ignore"
             - cullPath (boolean): Remove unnecessary waypoints, default true
+            - skipValidation (boolean): Skip start/goal collision checks, default false
             
     Returns:
         table: Array of Vector3 waypoints, or nil if no path found
@@ -230,6 +248,7 @@ function Pathfinder:FindPath(start, goal, options)
     local allowVertical = options.allowVertical ~= false
     local maxClimbHeight = options.maxClimbHeight or DEFAULT_MAX_CLIMB
     local maxFallHeight = options.maxFallHeight or DEFAULT_MAX_FALL
+    local skipValidation = options.skipValidation or false
     
     local rayParams = RaycastParams.new()
     local overParams = OverlapParams.new()
@@ -244,15 +263,17 @@ function Pathfinder:FindPath(start, goal, options)
     overParams.FilterType = Enum.RaycastFilterType.Exclude
     overParams.FilterDescendantsInstances = filtered
     
-    -- Validate start and goal
-    if checkCollision(start, testSize, overParams, waterMode, useStaticTerrain) then 
-        warn("[Pathfinder] Start position is blocked!")
-        return nil 
-    end
-    
-    if checkCollision(goal, testSize, overParams, waterMode, useStaticTerrain) then 
-        warn("[Pathfinder] Goal position is blocked!")
-        return nil 
+    -- Validate start and goal (skip if requested)
+    if not skipValidation then
+        if checkCollision(start, testSize, overParams, waterMode, useStaticTerrain) then 
+            warn("[Pathfinder] Start position is blocked!")
+            return nil 
+        end
+        
+        if checkCollision(goal, testSize, overParams, waterMode, useStaticTerrain) then 
+            warn("[Pathfinder] Goal position is blocked!")
+            return nil 
+        end
     end
     
     -- Build direction table based on settings
@@ -399,7 +420,7 @@ function Pathfinder:FindPath(start, goal, options)
     -- Process result
     if path then
         if shouldCullPath then
-            path = cullPath(path, waterMode)
+            path = cullPath(path, waterMode, rayParams)
         end
         return path
     else
