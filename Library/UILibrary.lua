@@ -333,7 +333,7 @@ function Library:CreateWindow(title, icon, size)
             end
             
             -- Toggle Component
-            function Section:CreateToggle(name, description, default, callback)
+            function Section:CreateToggle(flag, name, description, default, callback)
                 local toggled = default or false
                 callback = callback or function() end
                 local ComponentTrove = Trove.new()
@@ -437,7 +437,7 @@ function Library:CreateWindow(title, icon, size)
                     end
                 end)
 
-                Library:RegisterComponent(name, "Toggle",
+                Library:RegisterComponent(flag, "Toggle",
                     function() return toggled end,
                     function(value) 
                         if value ~= toggled then
@@ -461,7 +461,7 @@ function Library:CreateWindow(title, icon, size)
             end
             
             -- Slider Component
-            function Section:CreateSlider(name, min, max, default, callback)
+            function Section:CreateSlider(flag, name, min, max, default, callback)
                 local value = default or min
                 callback = callback or function() end
 
@@ -598,7 +598,7 @@ function Library:CreateWindow(title, icon, size)
                 Top.Size = UDim2.new(0, initialPixels, 1, 0)
                 Circle.Position = UDim2.new(0, initialPixels - 7.5, 0, -4)
 
-                Library:RegisterComponent(name, "Slider",
+                Library:RegisterComponent(flag, "Slider",
                     function() return value end,
                     function(val)
                         value = math.clamp(val, min, max)
@@ -626,7 +626,7 @@ function Library:CreateWindow(title, icon, size)
             end
                                                 
             -- Dropdown Component
-            function Section:CreateDropdown(name, options, default, callback)
+            function Section:CreateDropdown(flag, name, options, default, callback)
                 local selected = default or options[1]
                 local opened = false
                 callback = callback or function() end
@@ -826,7 +826,7 @@ function Library:CreateWindow(title, icon, size)
                     end
                 end)
 
-                Library:RegisterComponent(name, "Dropdown",
+                Library:RegisterComponent(flag, "Dropdown",
                     function() return selected end,
                     function(option)
                         if table.find(options, option) then
@@ -909,7 +909,7 @@ function Library:CreateWindow(title, icon, size)
                 }
             end
 
-            function Section:CreateMultiDropdown(name, options, defaults, callback)
+            function Section:CreateMultiDropdown(flag, name, options, defaults, callback)
                 local selected = defaults or {}
                 local opened = false
                 callback = callback or function() end
@@ -1131,7 +1131,7 @@ function Library:CreateWindow(title, icon, size)
                 
                 UpdateSelectedText()
 
-                Library:RegisterComponent(name, "MultiDropdown",
+                Library:RegisterComponent(flag, "MultiDropdown",
                     function() return selected end,
                     function(newSelected)
                         selected = newSelected
@@ -1230,7 +1230,7 @@ function Library:CreateWindow(title, icon, size)
                 }
             end
 
-            function Section:CreateColorPicker(name, default, callback)
+            function Section:CreateColorPicker(flag, name, default, callback)
                 local color = default or Color3.fromRGB(255, 0, 0)
                 local opened = false
                 callback = callback or function() end
@@ -1663,7 +1663,7 @@ function Library:CreateWindow(title, icon, size)
                 
                 UpdateDisplay()
 
-                Library:RegisterComponent(name, "ColorPicker",
+                Library:RegisterComponent(flag, "ColorPicker",
                     function() return color end,
                     function(newColor)
                         color = newColor
@@ -1781,7 +1781,7 @@ function Library:CreateWindow(title, icon, size)
                 }
             end
 
-            function Section:CreateTextbox(name, placeholder, default, callback)
+            function Section:CreateTextbox(flag, name, placeholder, default, callback)
                 local value = default or ""
                 callback = callback or function() end
 
@@ -1839,7 +1839,7 @@ function Library:CreateWindow(title, icon, size)
                     callback(value, enterPressed)
                 end)
 
-                Library:RegisterComponent(name, "Textbox",
+                Library:RegisterComponent(flag, "Textbox",
                     function() return TextboxInput.Text end,
                     function(newValue)
                         value = newValue
@@ -1893,7 +1893,7 @@ function Library:CreateWindow(title, icon, size)
                 }
             end
 
-            function Section:CreateKeybind(name, default, callback)
+            function Section:CreateKeybind(flag, name, default, callback)
                 local key = default or "None"
                 local mode = "Toggle"
                 local toggled = false
@@ -2165,7 +2165,7 @@ function Library:CreateWindow(title, icon, size)
                     end
                 end)
 
-                Library:RegisterComponent(name, "Keybind", 
+                Library:RegisterComponent(flag, "Keybind", 
                     function()
                         return {key, mode, toggled}
                     end,
