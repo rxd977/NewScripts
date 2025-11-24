@@ -2446,6 +2446,7 @@ function Library:CreateSettingsTab(window)
     local configDropdown
     
     local configNameBox = ConfigSection:CreateTextbox(
+        "ConfigName",
         "Config Name",
         "Enter name...",
         "",
@@ -2488,6 +2489,7 @@ function Library:CreateSettingsTab(window)
     ConfigSection:CreateDivider()
   
     configDropdown = ConfigSection:CreateDropdown(
+        "SelectConfig",
         "Select Config",
         self.SaveManager:GetConfigList(),
         nil,
@@ -2644,17 +2646,17 @@ function Library:CreateSettingsTab(window)
         end
     end)
     
-    self.SaveManager.Ignore["Config Name"] = true
-    self.SaveManager.Ignore["Select Config"] = true
-    self.SaveManager.Ignore["Theme Selector"] = true
-    self.SaveManager.Ignore["Theme Name"] = true
-    self.SaveManager.Ignore["Background Color"] = true
-    self.SaveManager.Ignore["Main Color"] = true
-    self.SaveManager.Ignore["Accent Color"] = true
-    self.SaveManager.Ignore["Side Color"] = true
-    self.SaveManager.Ignore["Text Color"] = true
-    self.SaveManager.Ignore["Sub Text Color"] = true
-    self.SaveManager.Ignore["Stroke Color"] = true
+    self.SaveManager.Ignore["ConfigName"] = true
+    self.SaveManager.Ignore["SelectConfig"] = true
+    self.SaveManager.Ignore["ThemeSelector"] = true
+    self.SaveManager.Ignore["ThemeName"] = true
+    self.SaveManager.Ignore["BackgroundColor"] = true
+    self.SaveManager.Ignore["MainColor"] = true
+    self.SaveManager.Ignore["AccentColor"] = true
+    self.SaveManager.Ignore["SideColor"] = true
+    self.SaveManager.Ignore["TextColor"] = true
+    self.SaveManager.Ignore["SubTextColor"] = true
+    self.SaveManager.Ignore["StrokeColor"] = true
     
     task.delay(1, function()
         local success, err = self.SaveManager:LoadAutoload()
@@ -2667,86 +2669,94 @@ function Library:CreateSettingsTab(window)
         end
     end)
 
-    -- THEME SECTION FIRST
+    -- THEME SECTION
     local ThemeSection = SettingsTab:CreateSection("Theme Manager")
     ThemeSection:CreateTitle("THEMES")
     
     -- Color Pickers for customization
     ThemeSection:CreateLabel("Customize Colors:")
     
-        -- Background Color
+    -- Background Color
     local bgPicker = ThemeSection:CreateColorPicker(
+        "BackgroundColor",
         "Background Color",
         Library.ThemeManager.CurrentColors.BackgroundColor,
         function(color)
             Library.ThemeManager.CurrentColors.BackgroundColor = color
-            Library.ThemeManager:RefreshUI()  -- Changed from ApplyTheme
+            Library.ThemeManager:RefreshUI()
         end
     )
 
     -- Main Color
     local mainPicker = ThemeSection:CreateColorPicker(
+        "MainColor",
         "Main Color",
         Library.ThemeManager.CurrentColors.MainColor,
         function(color)
             Library.ThemeManager.CurrentColors.MainColor = color
-            Library.ThemeManager:RefreshUI()  -- Changed from ApplyTheme
+            Library.ThemeManager:RefreshUI()
         end
     )
 
     -- Accent Color
     local accentPicker = ThemeSection:CreateColorPicker(
+        "AccentColor",
         "Accent Color",
         Library.ThemeManager.CurrentColors.AccentColor,
         function(color)
             Library.ThemeManager.CurrentColors.AccentColor = color
-            Library.ThemeManager:RefreshUI()  -- Changed from ApplyTheme
+            Library.ThemeManager:RefreshUI()
         end
     )
 
     -- Side Color
     local sidePicker = ThemeSection:CreateColorPicker(
+        "SideColor",
         "Side Color",
         Library.ThemeManager.CurrentColors.SideColor,
         function(color)
             Library.ThemeManager.CurrentColors.SideColor = color
-            Library.ThemeManager:RefreshUI()  -- Changed from ApplyTheme
+            Library.ThemeManager:RefreshUI()
         end
     )
 
     -- Text Color
     local textPicker = ThemeSection:CreateColorPicker(
+        "TextColor",
         "Text Color",
         Library.ThemeManager.CurrentColors.TextColor,
         function(color)
             Library.ThemeManager.CurrentColors.TextColor = color
-            Library.ThemeManager:RefreshUI()  -- Changed from ApplyTheme
+            Library.ThemeManager:RefreshUI()
         end
     )
 
     -- Sub Text Color
     local subTextPicker = ThemeSection:CreateColorPicker(
+        "SubTextColor",
         "Sub Text Color",
         Library.ThemeManager.CurrentColors.SubTextColor,
         function(color)
             Library.ThemeManager.CurrentColors.SubTextColor = color
-            Library.ThemeManager:RefreshUI()  -- Changed from ApplyTheme
+            Library.ThemeManager:RefreshUI()
         end
     )
 
     -- Stroke Color
     local strokePicker = ThemeSection:CreateColorPicker(
+        "StrokeColor",
         "Stroke Color",
         Library.ThemeManager.CurrentColors.StrokeColor,
-        function(color)  -- ✅ Fixed
+        function(color)
             Library.ThemeManager.CurrentColors.StrokeColor = color
             Library.ThemeManager:RefreshUI()
         end
     )
 
-        ThemeSection:CreateDivider()
+    ThemeSection:CreateDivider()
 
     local themeDropdown = ThemeSection:CreateDropdown(
+        "ThemeSelector",
         "Theme Selector",
         Library.ThemeManager:GetThemeList(),
         Library.ThemeManager:GetDefault(),
@@ -2796,7 +2806,13 @@ function Library:CreateSettingsTab(window)
     ThemeSection:CreateDivider()
 
     -- Custom Theme Saving
-    local customName = ThemeSection:CreateTextbox("Theme Name", "Enter name...", "", function() end)
+    local customName = ThemeSection:CreateTextbox(
+        "ThemeName",
+        "Theme Name",
+        "Enter name...",
+        "",
+        function() end
+    )
 
     ThemeSection:CreateButton("Save Current Theme", function()
         local name = customName.GetValue()
@@ -2910,7 +2926,7 @@ function Library:CreateSettingsTab(window)
         Library.Trove:Clean()        
     end)
 
-    MiscSection:CreateKeybind("Hide Menu", "RightShift", function()
+    MiscSection:CreateKeybind("HideMenu", "Hide Menu", "RightShift", function()
         Library.Window.ScreenGui.Enabled = not Library.Window.ScreenGui.Enabled
     end)
         
