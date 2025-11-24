@@ -135,7 +135,6 @@ function Library:CreateWindow(title, icon, size)
     local TabsPadding = Instance.new("UIPadding", TabsContainer)
     TabsPadding.PaddingTop = UDim.new(0, 85)
     
-    -- Main Content Area
     local Main = Instance.new("Frame")
     Main.Name = "Main"
     Main.BorderSizePixel = 0
@@ -143,17 +142,12 @@ function Library:CreateWindow(title, icon, size)
     Main.ClipsDescendants = true
     Main.Size = UDim2.new(1, 0, 1, 0)
     Main.Parent = Container
-    
+
     local MainPadding = Instance.new("UIPadding", Main)
-    MainPadding.PaddingTop = UDim.new(0, 10)
-    MainPadding.PaddingLeft = UDim.new(0, 90)
-    MainPadding.PaddingBottom = UDim.new(0, 10)
-    
-    local MainLayout = Instance.new("UIListLayout", Main)
-    MainLayout.Padding = UDim.new(0, 20)
-    MainLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    MainLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    MainLayout.FillDirection = Enum.FillDirection.Horizontal
+    MainPadding.PaddingTop = UDim.new(0, 35)  -- Increased from 10
+    MainPadding.PaddingLeft = UDim.new(0, 81)  -- Adjusted from 90
+    MainPadding.PaddingBottom = UDim.new(0, 35)  -- Increased from 10
+    MainPadding.PaddingRight = UDim.new(0, 10)  -- Added right padding
     
     -- Top Bar
     local Top = Instance.new("Frame")
@@ -186,7 +180,7 @@ function Library:CreateWindow(title, icon, size)
     -- Make draggable
     MakeDraggable(Container, Top, Window.Trove)
     
-    -- Tab Functions
+        -- Tab Functions
     function Window:CreateTab(name, icon)
         local Tab = {}
         Tab.Sections = {}
@@ -199,7 +193,7 @@ function Library:CreateWindow(title, icon, size)
         TabButton.BorderSizePixel = 0
         TabButton.BackgroundTransparency = 1
         TabButton.Size = UDim2.new(0, 62, 0, 70)
-        TabButton.AutoButtonColor = false  -- Disable default button color changes
+        TabButton.AutoButtonColor = false
         TabButton.Parent = TabsContainer
 
         local TabIcon = Instance.new("ImageLabel")
@@ -226,20 +220,35 @@ function Library:CreateWindow(title, icon, size)
         TabLabel.Position = UDim2.new(0.5, 0, 0, 54)
         TabLabel.Parent = TabButton
         
-        -- Tab Content Container
-        local TabContent = Instance.new("Frame")
+        -- Tab Content Container with ScrollingFrame
+        local TabContent = Instance.new("ScrollingFrame")
         TabContent.Name = name .. "Content"
         TabContent.Visible = false
         TabContent.BorderSizePixel = 0
         TabContent.BackgroundTransparency = 1
         TabContent.Size = UDim2.new(1, 0, 1, 0)
+        TabContent.ScrollBarImageColor3 = Color3.fromRGB(96, 96, 96)
+        TabContent.ScrollBarThickness = 4
+        TabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+        TabContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
         TabContent.Parent = Main
         
-        local ContentLayout = Instance.new("UIListLayout", TabContent)
-        ContentLayout.Padding = UDim.new(0, 20)
-        ContentLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+        -- Use UIGridLayout instead of UIListLayout
+        local ContentLayout = Instance.new("UIGridLayout", TabContent)
+        ContentLayout.CellSize = UDim2.new(0, 200, 0, 377)
+        ContentLayout.CellPadding = UDim2.new(0, 20, 0, 20)
         ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
         ContentLayout.FillDirection = Enum.FillDirection.Horizontal
+        ContentLayout.FillDirectionMaxCells = 3  -- 3 sections per row
+        ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+        ContentLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+        
+        -- Add padding to the content
+        local ContentPadding = Instance.new("UIPadding", TabContent)
+        ContentPadding.PaddingTop = UDim.new(0, 10)
+        ContentPadding.PaddingLeft = UDim.new(0, 10)
+        ContentPadding.PaddingRight = UDim.new(0, 10)
+        ContentPadding.PaddingBottom = UDim.new(0, 10)
         
         -- Tab Selection Logic
         local function SelectTab()
@@ -3526,7 +3535,6 @@ function Library.ThemeManager:UpdateWindow(window, theme)
             obj.ScrollBarImageColor3 = theme.SubTextColor
             
         elseif obj:IsA("UIGradient") then
-            -- Update toggle gradients with accent color
             if obj.Parent and obj.Parent.Name == "Toggle" then
                 obj.Color = ColorSequence.new{
                     ColorSequenceKeypoint.new(0, theme.AccentColor),
@@ -3554,3 +3562,9 @@ function Library.ThemeManager:GetDefault()
 end
 
 return Library
+
+
+
+
+
+
