@@ -585,7 +585,7 @@ function Library:CreateWindow(title, icon, size)
                     end
                 end)
                 
-                ComponentTrove:Connect(UserInputService.InputChange, function(input)
+                ComponentTrove:Connect(UserInputService.InputChanged, function(input)
                     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                         UpdateSlider(input)
                     end
