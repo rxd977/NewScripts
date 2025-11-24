@@ -3552,3 +3552,5 @@ function Library.ThemeManager:GetDefault()
     end
     return self.DefaultTheme
 end
+
+return Library
